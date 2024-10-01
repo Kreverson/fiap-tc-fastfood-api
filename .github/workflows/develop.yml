@@ -39,11 +39,9 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
-          cache: cache
 
-      - name: Build and test
-        shell: bash
-        run: cache -v +test
+      - name: Run Unit Tests
+        run: ./gradlew clean test
 
   build_and_push_docker:
     name: Build and Push Docker Image
