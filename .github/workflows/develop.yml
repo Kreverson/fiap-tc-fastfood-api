@@ -37,28 +37,25 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
 
-    env:
-      docker_image_url: kreverson/dev-fastfood-api:${{ github.sha }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Build Docker Image
-        run: docker build -t ${{env.docker_image_url}} .
+        run: docker build -t ${{ github.repository_owner }}/dev-${{ github.repository }}:${{ github.sha }} .
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Push Docker Image
-        run: docker push ${{env.docker_image_url}}
+        run: docker push ${{ github.repository_owner }}/dev-${{ github.repository }}:${{ github.sha }}
 
   deploy:
     if: false
     uses: ./.github/workflows/terraform.yml
     with:
       environment: dev
-      docker_image_url: ${{env.docker_image_url}}
+      docker_image_url: ${{ github.repository_owner }}/dev-${{ github.repository }}:${{ github.sha }}
       aws-assume-role-arn: "arn:aws:iam::011528262719:oidc-provider/token.actions.githubusercontent.com"
       aws-region: "us-east-2"
       aws-statefile-s3-bucket: "kreverson-us-east-2-terraform-statefile"
