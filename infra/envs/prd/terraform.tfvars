@@ -1,0 +1,9 @@
+aws_region            = "us-east-2"
+state_file            = "kreverson-us-east-2-terraform-statefile"
+environment           = "prd"
+docker_image_url      = ""
+app_name              = "prd-fastfood-api"
+app_port              = "8080"
+qty_replica           = 2
+ddl_auto              = "create-drop"
+show_sql              = "true"
