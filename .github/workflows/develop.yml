@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '17'
-          distribution: 'temurin'
 
       - name: Configuração cache Gradle
         uses: actions/cache@v2
@@ -64,7 +63,7 @@ jobs:
     needs: build_and_push_docker
 
     steps:
-      - name: Aplicar pacote no ambiente
+      - name: Iniciar workflow do Terraform
         uses: ./.github/workflows/terraform.yml
         with:
           environment: dev

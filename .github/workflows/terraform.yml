@@ -1,4 +1,4 @@
-name: "Terraform Workflow"
+name: "Executar workflow do Terraform"
 
 on:
   workflow_call:
@@ -30,28 +30,28 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
+      - name: Configuração do Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.8.3
 
-      - name: Configure AWS credentials
+      - name: Configuração das credenciais da AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.aws-assume-role-arn }}
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ inputs.aws-region }}
 
-      - name: Read destroy configuration
+      - name: Verificar chave exclusão da infraestrutura
         id: read-destroy-config
         run: |
           DESTROY="$(jq -r '.${{ inputs.environment }}' ./infra/destroy_config.json)"
           echo "destroy=$(echo $DESTROY)" >> $GITHUB_OUTPUT
 
-      - name: Terraform Init
+      - name: Executar o Terraform Init
         run: |
           cd infra && terraform init \
             -backend-config="bucket=${{ inputs.aws-statefile-s3-bucket }}" \
@@ -59,24 +59,24 @@ jobs:
             -backend-config="region=${{ inputs.aws-region }}" \
             -backend-config="dynamodb_table=${{ inputs.aws-lock-dynamodb-table }}"
 
-      - name: Terraform Validate
+      - name: Executar o Terraform Validate
         run: terraform validate
 
-      - name: Terraform Destroy
+      - name: Executar o Terraform Destroy
         if: steps.read-destroy-config.outputs.destroy == 'true'
         id: terraform-destroy
         run: cd infra &&
           terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
           terraform destroy -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -var="docker_image_url=${{ inputs.docker_image_url }}" -auto-approve
 
-      - name: Terraform Plan
+      - name: Executar o Terraform Plan
         if: steps.read-destroy-config.outputs.destroy != 'true'
         id: terraform-plan
         run: cd infra &&
           terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
           terraform plan -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -var="docker_image_url=${{ inputs.docker_image_url }}" -out="${{ inputs.environment }}.plan"
 
-      - name: Terraform Apply
+      - name: Executar o Terraform Apply
         if: steps.read-destroy-config.outputs.destroy != 'true'
         id: terraform-apply
         run: cd infra &&
