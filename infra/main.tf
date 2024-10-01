@@ -1,7 +1,7 @@
 provider "kubernetes" {
-  host                   = data.terraform_remote_state.eks.outputs.eks_cluster_endpoint
-  cluster_ca_certificate = base64decode(data.terraform_remote_state.eks.outputs.eks_cluster_certificate)
-  token                  = data.aws_eks_cluster_auth.cluster.token
+  host                   = data.terraform_remote_state.cloud-infra-api.outputs.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(data.terraform_remote_state.cloud-infra-api.outputs.eks_cluster_certificate_authority_data)
+  token                  = data.terraform_remote_state.cloud-infra-api.outputs.eks_cluster_token
 }
 
 resource "kubernetes_namespace" "fastfood_namespace" {
@@ -34,31 +34,53 @@ resource "kubernetes_deployment" "fastfood_api" {
 
       spec {
         container {
-          image = "${var.image_repo}/${var.app_name}:${var.image_version}" # Imagem Docker publicada
+          image = var.docker_image_url
           name  = var.app_name
           ports {
-            container_port = 8080
+            container_port = var.app_port
           }
 
           env {
-            name  = "DB_HOST"
-            value = data.terraform_remote_state.rds.outputs.rds_endpoint
+            name  = "APP_NAME"
+            value = var.app_name
           }
+
+          env {
+            name  = "DDL_AUTO"
+            value = var.ddl_auto
+          }
+
+          env {
+            name  = "SHOW_SQL"
+            value = var.show_sql
+          }
+
+          env {
+            name  = "APP_PORT"
+            value = var.app_port
+          }
+
+          env {
+            name  = "URL_DATABASE"
+            value = data.terraform_remote_state.cloud-infra-database.outputs.rds_endpoint
+          }
+
 
           env {
             name  = "DB_NAME"
-            value = "fastfood"
+            value = data.terraform_remote_state.cloud-infra-database.outputs.db_name
           }
 
           env {
-            name  = "DB_USER"
-            value = "admin"
+            name  = "USER_DATABASE"
+            value = data.terraform_remote_state.cloud-infra-database.outputs.db_username
           }
 
           env {
-            name  = "DB_PASSWORD"
-            value = data.terraform_remote_state.rds.outputs.db_password
+            name  = "PASSWORD_DATABASE"
+            value = data.terraform_remote_state.cloud-infra-database.outputs.db_password
           }
+
         }
       }
     }
@@ -80,7 +102,7 @@ resource "kubernetes_service" "fastfood_service" {
 
     port {
       port        = 80
-      target_port = 8080
+      target_port = var.app_port
     }
   }
 }

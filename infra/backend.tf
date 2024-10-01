@@ -1,28 +1,17 @@
-# Acessar o estado remoto do EKS e VPC
-data "terraform_remote_state" "vpc" {
+data "terraform_remote_state" "cloud-infra-api" {
   backend = "s3"
   config = {
     bucket = var.state_file
-    key    = "${var.environment}/eks/vpc/terraform.tfstate"
+    key    = "${var.environment}/cloud-infra-api/terraform.tfstate"
     region = var.aws_region
   }
 }
 
-data "terraform_remote_state" "eks" {
+data "terraform_remote_state" "cloud-infra-database" {
   backend = "s3"
   config = {
     bucket = var.state_file
-    key    = "${var.environment}/eks/terraform.tfstate"
-    region = var.aws_region
-  }
-}
-
-# Acessar o estado remoto do RDS
-data "terraform_remote_state" "rds" {
-  backend = "s3"
-  config = {
-    bucket = var.state_file
-    key    = "${var.environment}/rds/terraform.tfstate"
+    key    = "${var.environment}/cloud-infra-database/terraform.tfstate"
     region = var.aws_region
   }
 }
