@@ -12,14 +12,7 @@ permissions:
 jobs:
   test:
     name: Integração Continua (CI)
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            java: 17
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -35,8 +28,7 @@ jobs:
       - name: Configuração do Java
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: '17'
 
       - name: Buildar o projeto
         run: ./gradlew build
@@ -64,11 +56,17 @@ jobs:
 
   deploy:
     if: false
-    uses: ./.github/workflows/terraform.yml
-    with:
-      environment: dev
-      docker_image_url: kreverson/dev-fastfood-api:${{ github.sha }}
-      aws-assume-role-arn: "arn:aws:iam::011528262719:oidc-provider/token.actions.githubusercontent.com"
-      aws-region: "us-east-2"
-      aws-statefile-s3-bucket: "kreverson-us-east-2-terraform-statefile"
-      aws-lock-dynamodb-table: "kreverson-us-east-2-terraform-lock"
+    name: Entrega Contínua (CD)
+    runs-on: ubuntu-latest
+    needs: build_and_push_docker
+
+    steps:
+      - name: Aplicar pacote no ambiente
+        uses: ./.github/workflows/terraform.yml
+        with:
+          environment: dev
+          docker_image_url: kreverson/dev-fastfood-api:${{ github.sha }}
+          aws-assume-role-arn: "arn:aws:iam::011528262719:oidc-provider/token.actions.githubusercontent.com"
+          aws-region: "us-east-2"
+          aws-statefile-s3-bucket: "kreverson-us-east-2-terraform-statefile"
+          aws-lock-dynamodb-table: "kreverson-us-east-2-terraform-lock"
